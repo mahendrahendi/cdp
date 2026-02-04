@@ -1,4 +1,6 @@
 import datetime
+import tensorflow as tf
+import tensorflow.keras as keras
 from libs.BaseClass import BaseClass
 from libs.UNet import *
 from libs.Discriminators import ClassicalDiscriminator
@@ -24,9 +26,9 @@ class TemplateEstimatior(BaseClass):
         )
 
         if self.type == "Dtt_Dxx":
-            self.__initUnetXUnetT(args)
+            self.__initUnetXUnetT()
         elif self.type == "Dtt_Dt_Dxx_Dx":
-            self.__initUnetDxUnetDt(args)
+            self.__initUnetDxUnetDt()
         else:
             self.__initUnetModel(args)
 

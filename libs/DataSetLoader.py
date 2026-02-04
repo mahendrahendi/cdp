@@ -88,16 +88,20 @@ class DataSetLoader(BaseClass):
             args["train_indices"], args["validation_indices"], args["test_indices"] = self._getIndices(len(list), args)
 
         if self.type == "train":
-            self._printed, self._binary = self._loadImages(list, args, args["train_indices"])
+            indices = args.get("train_indices", args["train_indices"] if "train_indices" in args else [*range(len(list))])
+            self._printed, self._binary = self._loadImages(list, args, indices)
             # train data augmentation
             if args["augmentation"]:
                 self._augmentTrainData(args["augmentation_args"])
         elif self.type == "validation":
-            self._printed, self._binary = self._loadImages(list, args, args["validation_indices"])
+            indices = args.get("validation_indices", args["validation_indices"] if "validation_indices" in args else [*range(len(list))])
+            self._printed, self._binary = self._loadImages(list, args, indices)
         elif self.type == "test":
-            self._printed, self._binary = self._loadImages(list, args, args["test_indices"])
+            indices = args.get("test_indices", args["test_indices"] if "test_indices" in args else [*range(len(list))])
+            self._printed, self._binary = self._loadImages(list, args, indices)
         elif self.type == "trainx": # to regenerate train codes as well, to have a full dataset
-            self._printed, self._binary = self._loadImages(list, args, args["train_indices"])
+            indices = args.get("train_indices", args["train_indices"] if "train_indices" in args else [*range(len(list))])
+            self._printed, self._binary = self._loadImages(list, args, indices)
 
     def _loadImages(self, list, args, inds):
         self._indices = inds if not isinstance(inds, str) else self._loadIndices(inds)
@@ -114,7 +118,13 @@ class DataSetLoader(BaseClass):
             image_x = skimage.io.imread(self._printed_codes_path + "/" + self._code_name % ind).astype(np.float64)
             if len(image_x.shape) < len(args["target_size"]):
                 image_x = image_x.reshape((image_x.shape[0], image_x.shape[1], 1))
+            # Convert RGBA to RGB if needed
+            if len(image_x.shape) == 3 and image_x.shape[2] == 4:
+                image_x = image_x[:, :, :3]
             image_y = skimage.io.imread(self._binary_codes_path + "/" + self._code_name % ind).astype(np.float64)
+            # Convert to grayscale if RGB or RGBA
+            if len(image_y.shape) == 3:
+                image_y = rgb2gray(image_y)
 
             if args["synchronize_with_template"]:
                 image_x, image_y = self._synchronize(image_x, image_y)
@@ -122,8 +132,8 @@ class DataSetLoader(BaseClass):
             image_x = self._centralCrop(image_x, targen_size=args["target_size"])
             image_y = self._centralCrop(image_y, targen_size=args["template_target_size"])
 
-            printed[i] = self.normaliseDynamicRange(image_x, args)
-            binary[i] = self.normaliseDynamicRange(image_y, args)
+            printed[i] = self.normaliseDynamicRange(image_x)
+            binary[i] = self.normaliseDynamicRange(image_y)
 
         return printed, binary
 

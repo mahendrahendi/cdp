@@ -106,11 +106,11 @@ def run(args):
     file_suf = "%s_%s" % (args.image_type, args.type)
 
     log.info("Train data preparation.....")
-    file_train = "./anomaly_detection/%s/train_%s.txt" % (result_dir, file_suf)
+    file_train = "./%s/train_%s.txt" % (result_dir, file_suf)
     Dists = loadListFromJson(file_train)
 
     log.info("Test data preparation.....")
-    file_test = "./anomaly_detection/%s/test_%s.txt" % (result_dir, file_suf)
+    file_test = "./%s/test_%s.txt" % (result_dir, file_suf)
     Dists_test = loadListFromJson(file_test)
 
     # === OC-SVM training ==============================================================================================
@@ -128,13 +128,21 @@ def run(args):
             X0 = np.hstack((X0, np.asarray(Dists_test[ll])[:, 0]))
             X1 = np.hstack((X1, np.asarray(Dists_test[ll])[:, 1]))
 
-    xx, yy = np.meshgrid(np.linspace(-50, 450, 100),
-                         np.linspace(0.001, 0.003, 100))
+    # Adjust ranges based on actual feature values
+    X_all = np.vstack([np.asarray(d) for d in Dists_test])
+    x_min, x_max = X_all[:, 0].min() - 100, X_all[:, 0].max() + 100
+    y_min, y_max = X_all[:, 1].min() - 0.001, X_all[:, 1].max() + 0.001
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
+                         np.linspace(y_min, y_max, 100))
     Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
 
     plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.Purples)
-    plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors='palevioletred')
+    if Z.max() > 0:
+        plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors='palevioletred')
+    else:
+        # All decision values are negative (all inside boundary)
+        plt.contourf(xx, yy, Z, levels=[Z.max(), 0], colors='palevioletred')
 
     title = ""
     for ll in range(len(Dists_test)):

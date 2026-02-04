@@ -11,8 +11,8 @@ import yaml
 import sys
 sys.path.insert(0,'..')
 
-import libs._yaml_utils as yaml_utils
-from libs._utils import *
+import libs.yaml_utils as yaml_utils
+from libs.utils import *
 
 from libs.DataSetLoader import DataSetLoader
 from libs.EstimatiorModel import TemplateEstimatior
@@ -21,6 +21,7 @@ from libs.EstimatiorModel import TemplateEstimatior
 parser = argparse.ArgumentParser(description="TRAIN: the feature extraction model trained wrt Dtt and Dxx terms")
 parser.add_argument("--config_path", default="./configuration.yml", type=str, help="The config file path")
 # datset parameters
+parser.add_argument("--seed", default=42, type=int, help="Random seed for data splitting")
 parser.add_argument("--image_type", default="rgb", type=str, choices=['rgb', 'gray'], help="The image type")
 # model parameters
 parser.add_argument("--type", default="Dtt_Dxx", type=str, help="The trained model type")

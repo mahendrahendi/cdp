@@ -29,7 +29,7 @@ parser.add_argument("--data_paths", default=["../data/original/rgb/",
                                              "../data/fakes_1/paper_gray/rgb/",
                                              "../data/fakes_2/paper_white/rgb/",
                                              "../data/fakes_2/paper_gray/rgb/"
-                                            ], type=str, help="The data paths")
+                                            ], type=str, nargs='+', help="The data paths")
 # model parameters
 parser.add_argument("--type", default="Dtt_Dxx", type=str, choices=["Dtt_Dxx", "Dtt_Dt_Dxx_Dx"], help="The trained model type")
 parser.add_argument("--epoch", default=100, type=int, help="The test epoch")
@@ -56,6 +56,8 @@ def run(args):
 
     config = yaml_utils.Config(yaml.load(open(args.config_path)))
     symbol_size = config.dataset["args"]["symbol_size"]
+    target_size = config.dataset["args"]["target_size"][0]  # Get the image size (320)
+    template_size = config.dataset["args"]["template_target_size"][0]  # Get template size (320)
 
     args.checkpoint_dir = "%s_%s" % (args.image_type, args.type)
     args.dir = "%s" % args.type
@@ -75,7 +77,7 @@ def run(args):
 
     Dists   = []
     Indices = []
-    for ind, path in enumerate(args.printed_paths):
+    for ind, path in enumerate(args.data_paths):
         args.printed_path = path
         if len(Indices):
             config.dataset["args"]["test_indices"] = Indices
@@ -89,26 +91,33 @@ def run(args):
 
         Res = []
         l = -1
-         for x_batch, y_batch in DataGen.datagen:
+        for x_batch, y_batch in DataGen.datagen:
             l += 1
             if batches == l:
                 break
 
             prediction = EstimationModel.predict(x_batch)
 
-            t_predict = prediction[0]
-            x_predict = prediction[1]
+            t_predict_batch = prediction[0]
+            x_predict_batch = prediction[1]
 
-            t_predict = t_predict.reshape((256, 256))[:-1, :-1]
-            x_predict = x_predict.reshape((256, 256, -1))[:-1, :-1]
-            y_batch   = y_batch.reshape((256, 256))[:-1, :-1]
-            x_batch   = x_batch.reshape((256, 256, -1))[:-1, :-1]
+            # Calculate crop size to make it divisible by symbol_size
+            crop_size_t = (template_size // symbol_size) * symbol_size
+            crop_size_x = (target_size // symbol_size) * symbol_size
 
-            t_predict_binary = postProcessingSimbolWise(np.copy(t_predict), symbol_size=symbol_size, thr=args.thr)
+            # Process each sample in the batch
+            batch_size = t_predict_batch.shape[0]
+            for b in range(batch_size):
+                t_predict = t_predict_batch[b].reshape((template_size, template_size))[:crop_size_t, :crop_size_t]
+                x_predict = x_predict_batch[b].reshape((target_size, target_size, -1))[:crop_size_x, :crop_size_x]
+                y_sample  = y_batch[b].reshape((template_size, template_size))[:crop_size_t, :crop_size_t]
+                x_sample  = x_batch[b].reshape((target_size, target_size, -1))[:crop_size_x, :crop_size_x]
 
-            dist_t = np.sum(np.logical_xor(y_batch.reshape((-1)), t_predict_binary.reshape((-1)))) / (symbol_size**2)
-            dist_x = mse1D(x_batch.reshape((-1)), x_predict.reshape((-1)))
-            Res.append([dist_t, dist_x])
+                t_predict_binary = postProcessingSimbolWise(np.copy(t_predict), symbol_size=symbol_size, thr=args.thr)
+
+                dist_t = np.sum(np.logical_xor(y_sample.reshape((-1)), t_predict_binary.reshape((-1)))) / (symbol_size**2)
+                dist_x = mse1D(x_sample.reshape((-1)), x_predict.reshape((-1)))
+                Res.append([dist_t, dist_x])
 
         Dists.append(Res)
 
