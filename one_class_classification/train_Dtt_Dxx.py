@@ -27,6 +27,7 @@ parser.add_argument("--image_type", default="rgb", type=str, choices=['rgb', 'gr
 parser.add_argument("--type", default="Dtt_Dxx", type=str, help="The trained model type")
 parser.add_argument("--epochs", default=100, type=int, help="Number of training epochs")
 parser.add_argument("--start_epoch", default=0, type=int, help="The start epoch")
+parser.add_argument("--eval_val", default=1, type=int, help="Evaluate validation loss each epoch")
 # log mode
 parser.add_argument("--is_debug", default=True, type=int, help="Is debug mode?")
 
@@ -68,6 +69,11 @@ def train(args):
     log.info("Start Train Data loading.....")
     DataGenTrain = DataSetLoader(config, args, type="train", is_debug_mode=args.is_debug)
     DataGenTrain.initDataSet()
+    DataGenVal = None
+    if args.eval_val:
+        log.info("Start Validation Data loading.....")
+        DataGenVal = DataSetLoader(config, args, type="validation", is_debug_mode=args.is_debug)
+        DataGenVal.initDataSet()
 
     # === model scheme visualisation ===============================================================================
     if args.is_debug:
@@ -101,9 +107,29 @@ def train(args):
                 # the generator loops indefinitely
                 break
 
+        # --- Validation ---
+        if DataGenVal is not None:
+            Val_Loss_x = []
+            Val_Loss_t = []
+            val_batches = 0
+            for x_batch, y_batch in DataGenVal.datagen:
+                y_batch = y_batch.reshape((-1, config["dataset"]["args"]["target_size"][0],
+                                           config["dataset"]["args"]["target_size"][1], 1))
+                val_loss = EstimationModel.test_on_batch(x_batch, [y_batch, x_batch])
+                Val_Loss_t.append(val_loss[1])
+                Val_Loss_x.append(val_loss[2])
+                val_batches += 1
+                if val_batches >= DataGenVal.n_batches:
+                    break
+
         log.info(f"epoch : {epoch}, \t"
                  f"mse_t = {np.mean(np.asarray(Loss_t))}\t "
                  f"mse_x = {np.mean(np.asarray(Loss_x))}")
+
+        if DataGenVal is not None:
+            log.info(f"val   : {epoch}, \t"
+                     f"mse_t = {np.mean(np.asarray(Val_Loss_t))}\t "
+                     f"mse_x = {np.mean(np.asarray(Val_Loss_x))}")
 
         # ------------------------------------------------------------------------
         if epoch % save_each == 0 or epoch == args.epochs:

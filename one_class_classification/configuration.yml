@@ -1,4 +1,4 @@
-checkpoint_dir: checkpoints2
+checkpoint_dir: checkpoints
 results_dir: results
 
 batchsize: 4
@@ -33,7 +33,7 @@ models:
 dataset:
   dataset_name: IndigoMobile
   args:
-    symbol_size: 5
+    symbol_size: 6
     templates_path: ../data/binary/
     printed_path: ../data/original/crop/
     bad_indices: []
@@ -47,9 +47,9 @@ dataset:
       rotation_angles: [0, 90, 180, 270]
       gamma: [0.5, 1.2, 0.1] # [start, end, step]
       flip: [0, 1] # ["horizontal", "vertical"]
-    train_ratio: 0.6 # 60% (2 samples for training)
-    val_ratio: 0.2 # 20% (1 sample for validation)
-    test_ration: 0.2 # 20% (1 sample for test)
+    train_ratio: 0.4 # 60% (2 samples for training)
+    val_ratio: 0.1 # 20% (1 sample for validation)
+    test_ration: 0.5 # 20% (1 sample for test)
 
 
 

@@ -31,6 +31,7 @@ parser.add_argument("--epoch", default=10, type=int, help="Model checkpoint epoc
 parser.add_argument("--image_type", default="rgb", type=str, help="Image type")
 parser.add_argument("--type", default="Dtt_Dxx", type=str, help="Model type")
 parser.add_argument("--thr", default=0.5, type=float, help="Binarization threshold")
+parser.add_argument("--decision_thr", default=0.0, type=float, help="Decision threshold for OC-SVM (higher = stricter)")
 
 args = parser.parse_args()
 
@@ -190,7 +191,7 @@ def main():
     print(f"Features: dist_t={features[0]:.2f}, dist_x={features[1]:.6f}")
     print(f"Decision value: {decision_value:.6f}")
 
-    if prediction == 1:
+    if decision_value >= args.decision_thr:
         print("\n✓ STATUS: AUTHENTIC")
         print("  The image is classified as an ORIGINAL.")
         exit_code = 0
