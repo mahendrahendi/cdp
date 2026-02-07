@@ -52,9 +52,14 @@ log.info("PID = %d\n" % os.getpid())
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # ======================================================================================================================
 
+def _to_array(x):
+    while isinstance(x, (list, tuple)) and len(x) == 1:
+        x = x[0]
+    return np.asarray(x)
+
 def run(args):
 
-    config = yaml_utils.Config(yaml.load(open(args.config_path)))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
     symbol_size = config.dataset["args"]["symbol_size"]
     target_size = config.dataset["args"]["target_size"][0]  # Get the image size (320)
     template_size = config.dataset["args"]["template_target_size"][0]  # Get template size (320)
@@ -73,9 +78,9 @@ def run(args):
         Estimator.UnetModel.summary()
 
     # === Test =====================================================================================================
-    EstimationModel.load_weights("%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, args.epoch))
+    EstimationModel.load_weights("%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, args.epoch))
 
-    Dists   = []
+    Dists = []
     Indices = []
     for ind, path in enumerate(args.data_paths):
         args.printed_path = path
@@ -98,8 +103,8 @@ def run(args):
 
             prediction = EstimationModel.predict(x_batch)
 
-            t_predict_batch = prediction[0]
-            x_predict_batch = prediction[1]
+            t_predict_batch = _to_array(prediction[0])
+            x_predict_batch = _to_array(prediction[1])
 
             # Calculate crop size to make it divisible by symbol_size
             crop_size_t = (template_size // symbol_size) * symbol_size
@@ -110,8 +115,8 @@ def run(args):
             for b in range(batch_size):
                 t_predict = t_predict_batch[b].reshape((template_size, template_size))[:crop_size_t, :crop_size_t]
                 x_predict = x_predict_batch[b].reshape((target_size, target_size, -1))[:crop_size_x, :crop_size_x]
-                y_sample  = y_batch[b].reshape((template_size, template_size))[:crop_size_t, :crop_size_t]
-                x_sample  = x_batch[b].reshape((target_size, target_size, -1))[:crop_size_x, :crop_size_x]
+                y_sample = y_batch[b].reshape((template_size, template_size))[:crop_size_t, :crop_size_t]
+                x_sample = x_batch[b].reshape((target_size, target_size, -1))[:crop_size_x, :crop_size_x]
 
                 t_predict_binary = postProcessingSimbolWise(np.copy(t_predict), symbol_size=symbol_size, thr=args.thr)
 
@@ -124,48 +129,6 @@ def run(args):
     saveListAsJson(Dists, "%s/%s_%s.txt" % (Estimator.results_dir, args.subset, args.save_suf))
 
 
-
 # ======================================================================================================================
 if __name__ == "__main__":
     run(args)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
