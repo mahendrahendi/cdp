@@ -36,20 +36,33 @@ args = parser.parse_args()
 set_log_config(args.is_debug)
 log.info("PID = %d\n" % os.getpid())
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
+import tensorflow as tf
+tf.config.threading.set_inter_op_parallelism_threads(15)
+tf.config.threading.set_intra_op_parallelism_threads(15)
+strategy = tf.distribute.MirroredStrategy()
+
+# Optimize BLAS libraries for 15 cores
+os.environ["OMP_NUM_THREADS"] = "15"
+os.environ["MKL_NUM_THREADS"] = "15"
+os.environ["OPENBLAS_NUM_THREADS"] = "15"
+os.environ["NUMEXPR_NUM_THREADS"] = "15"
+
+log.info("CPU Optimization: Using 15 threads")
 # ======================================================================================================================
 
 def train(args):
 
-    config = yaml_utils.Config(yaml.load(open(args.config_path)))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
 
     args.checkpoint_dir = "%s_%s" % (args.image_type, args.type)
     args.dir = "%s" % args.type
 
     log.info("Start Model preparation.....")
-    Estimator = TemplateEstimatior(config, args, type=args.type)
-    EstimationModel = Estimator.EstimationModel
+    with strategy.scope():
+        Estimator = TemplateEstimatior(config, args, type=args.type)
+        EstimationModel = Estimator.EstimationModel
 
     # --- Data set -----------
     log.info("Start Train Data loading.....")
@@ -66,7 +79,7 @@ def train(args):
 
     # === Training =================================================================================================
     if args.start_epoch > 0:
-        EstimationModel.load_weights("%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, args.start_epoch))
+        EstimationModel.load_weights("%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, args.start_epoch))
 
     for epoch in range(args.start_epoch+1, args.epochs + 1):
         Loss_x = []
@@ -94,7 +107,7 @@ def train(args):
 
         # ------------------------------------------------------------------------
         if epoch % save_each == 0 or epoch == args.epochs:
-            EstimationModel.save_weights("%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, epoch))
+            EstimationModel.save_weights("%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, epoch))
 
 # ======================================================================================================================
 if __name__ == "__main__":
