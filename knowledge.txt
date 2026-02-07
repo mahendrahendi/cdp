@@ -137,7 +137,7 @@ B) ONE-CLASS CLASSIFICATION WORKFLOW (Recommended):
 
    - Loads ONLY originals from data/original/rgb/
    - Trains encoder-decoder: x → t̂ → x̂
-   - Saves weights to: checkpoints/rgb_Dtt_Dxx/EstimationModel_epoch_100
+   - Saves weights to: checkpoints/rgb_Dtt_Dxx/EstimationModel_epoch_100.weights.h5
 
    Step 2: Extract Features
    $ python ./one_class_classification/test_Dtt_Dxx.py --epoch 100 --subset test
@@ -473,7 +473,7 @@ What the losses mean:
 - Final values around mse_t=0.21, mse_x=0.003 are good for this dataset
 
 Checkpoint saved to:
-checkpoints/rgb_Dtt_Dxx/EstimationModel_epoch_10
+checkpoints/rgb_Dtt_Dxx/EstimationModel_epoch_10.weights.h5
 
 ================================================================================
 STEP 2: EXTRACT FEATURES
@@ -619,7 +619,7 @@ ONE-CLASS CLASSIFICATION (Your POC):
 3. Train feature extraction model
    $ python ./one_class_classification/train_Dtt_Dxx.py --epochs 10
 
-   Saves: checkpoints/rgb_Dtt_Dxx/EstimationModel_epoch_10
+   Saves: checkpoints/rgb_Dtt_Dxx/EstimationModel_epoch_10.weights.h5
 
 4. Extract train features (for OC-SVM training)
    $ python ./one_class_classification/test_Dtt_Dxx.py --epoch 10 --subset train --data_paths "../data/original/rgb/"
@@ -740,7 +740,7 @@ FINAL CHECKLIST FOR YOUR POC
 
 COMPLETED:
 - Training completed (10 epochs)
-- Checkpoint saved (EstimationModel_epoch_10)
+- Checkpoint saved (EstimationModel_epoch_10.weights.h5)
 - Test features extracted
 
 TO COMPLETE:

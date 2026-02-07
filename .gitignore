@@ -25,6 +25,7 @@ wheels/
 
 # Data and Results
 data/
+checkpoints2/
 checkpoints/
 results/
 TensorBoard/

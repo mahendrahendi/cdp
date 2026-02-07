@@ -21,7 +21,6 @@ class TemplateEstimatior(BaseClass):
             log_dir=self.tensor_board_dir,
             histogram_freq=1,
             write_graph=True,
-            write_grads=True,
             write_images=True
         )
 
@@ -145,11 +144,11 @@ class TemplateEstimatior(BaseClass):
 
     def __getLoss(self, loss):
         if loss == "binary_crossentropy":
-            return tf.keras.losses.binary_crossentropy
+            return tf.keras.losses.BinaryCrossentropy()
         elif loss == "mse":
-            return tf.keras.losses.mean_squared_error
+            return tf.keras.losses.MeanSquaredError()
         elif loss == "l1":
-            return tf.keras.losses.mean_absolute_error
+            return tf.keras.losses.MeanAbsoluteError()
 
     def __getOptimizer(self, optimazer, lr):
         if optimazer == "adam":

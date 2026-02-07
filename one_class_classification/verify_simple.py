@@ -37,6 +37,11 @@ args = parser.parse_args()
 
 # ======================================================================================================================
 
+def _to_array(x):
+    while isinstance(x, (list, tuple)) and len(x) == 1:
+        x = x[0]
+    return np.asarray(x)
+
 def extract_image_index(image_path):
     """Extract image index from filename (e.g., 0000.png -> 0, 0042.png -> 42)"""
     # Get just the filename without path
@@ -67,7 +72,7 @@ def main():
         args.data_path = os.path.dirname(args.image_path)
 
     # Load config
-    config = yaml_utils.Config(yaml.load(open(args.config_path), Loader=yaml.FullLoader))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
 
     # Setup args
     args.checkpoint_dir = "%s_%s" % (args.image_type, args.type)
@@ -83,8 +88,8 @@ def main():
     Estimator = TemplateEstimatior(config, args, type=args.type)
     EstimationModel = Estimator.EstimationModel
 
-    checkpoint_path = "%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, args.epoch)
-    if not os.path.exists(checkpoint_path + ".index"):
+    checkpoint_path = "%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, args.epoch)
+    if not os.path.exists(checkpoint_path):
         print(f"ERROR: Model checkpoint not found at {checkpoint_path}")
         sys.exit(1)
 
@@ -129,8 +134,8 @@ def main():
     print("[4/4] Extracting features and classifying...")
 
     prediction = EstimationModel.predict(x_batch)
-    t_predict_batch = prediction[0]
-    x_predict_batch = prediction[1]
+    t_predict_batch = _to_array(prediction[0])
+    x_predict_batch = _to_array(prediction[1])
 
     # Calculate crop size
     crop_size_t = (template_size // symbol_size) * symbol_size

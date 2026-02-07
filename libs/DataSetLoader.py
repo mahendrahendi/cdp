@@ -1,6 +1,7 @@
 import json
 import os
 import math
+import re
 import numpy as np
 
 import scipy.signal
@@ -62,9 +63,9 @@ class DataSetLoader(BaseClass):
 
         return list
 
-    def _getIndices(self, N, args):
+    def _getIndices(self, indices, args):
         np.random.seed(seed=self._seed)
-        indices = np.arange(1, N+1)
+        indices = np.asarray(indices, dtype=int)
 
         # exclude the bad codes
         indices = np.setdiff1d(indices, np.asarray(args["bad_indices"]))
@@ -83,32 +84,41 @@ class DataSetLoader(BaseClass):
 
         list = os.listdir(self._binary_codes_path)
         list.sort()
+        available_indices = self._extractCodeIndices(list)
 
         if self._seed >= 0:
-            args["train_indices"], args["validation_indices"], args["test_indices"] = self._getIndices(len(list), args)
+            args["train_indices"], args["validation_indices"], args["test_indices"] = self._getIndices(available_indices, args)
 
         if self.type == "train":
-            indices = args.get("train_indices", args["train_indices"] if "train_indices" in args else [*range(len(list))])
+            indices = args.get("train_indices", args["train_indices"] if "train_indices" in args else available_indices)
             self._printed, self._binary = self._loadImages(list, args, indices)
             # train data augmentation
             if args["augmentation"]:
                 self._augmentTrainData(args["augmentation_args"])
         elif self.type == "validation":
-            indices = args.get("validation_indices", args["validation_indices"] if "validation_indices" in args else [*range(len(list))])
+            indices = args.get("validation_indices", args["validation_indices"] if "validation_indices" in args else available_indices)
             self._printed, self._binary = self._loadImages(list, args, indices)
         elif self.type == "test":
-            indices = args.get("test_indices", args["test_indices"] if "test_indices" in args else [*range(len(list))])
+            indices = args.get("test_indices", args["test_indices"] if "test_indices" in args else available_indices)
             self._printed, self._binary = self._loadImages(list, args, indices)
         elif self.type == "trainx": # to regenerate train codes as well, to have a full dataset
-            indices = args.get("train_indices", args["train_indices"] if "train_indices" in args else [*range(len(list))])
+            indices = args.get("train_indices", args["train_indices"] if "train_indices" in args else available_indices)
             self._printed, self._binary = self._loadImages(list, args, indices)
+
+    def _extractCodeIndices(self, file_list):
+        indices = []
+        for filename in file_list:
+            m = re.match(r"^(\d+)\.png$", filename)
+            if m:
+                indices.append(int(m.group(1)))
+        return np.asarray(sorted(indices), dtype=int)
 
     def _loadImages(self, list, args, inds):
         self._indices = inds if not isinstance(inds, str) else self._loadIndices(inds)
 
         N = len(self._indices)
-        printed = np.zeros((N, (*args["target_size"])))
-        binary  = np.zeros((N, (*args["template_target_size"])))
+        printed = np.zeros((N, *args["target_size"]))
+        binary  = np.zeros((N, *args["template_target_size"]))
 
         i = -1
         for ind in self._indices:

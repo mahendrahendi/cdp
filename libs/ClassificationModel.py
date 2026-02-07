@@ -26,7 +26,6 @@ class ClassificationModel(BaseClass):
             log_dir=self.tensor_board_dir,
             histogram_freq=1,
             write_graph=True,
-            write_grads=True,
             write_images=True
         )
 
@@ -59,9 +58,9 @@ class ClassificationModel(BaseClass):
     def __getLoss(self, loss):
 
         if loss == "binary_crossentropy":
-            return tf.keras.losses.binary_crossentropy
+            return tf.keras.losses.BinaryCrossentropy()
         elif loss == "mse":
-            return tf.keras.losses.mean_squared_error
+            return tf.keras.losses.MeanSquaredError()
 
     def __getOptimizer(self, optimazer, lr):
 

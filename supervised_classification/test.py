@@ -47,7 +47,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # ======================================================================================================================
 def run():
-    config = yaml_utils.Config(yaml.load(open(args.config_path)))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
 
     args.checkpoint_dir = "%s_supervised_classifier_n_%d" % (args.image_type, args.n_classes)
     args.dir = "supervised_classifier_lr%s" % args.lr
@@ -56,7 +56,7 @@ def run():
     model = ClassificationModel(config, args)
     Classifier = model.ClassifierModel
     log.info("Pretrained model loading.....")
-    Classifier.load_weights("%s/Classifier_epoch_%d" % (model.checkpoint_dir, args.epoch))
+    Classifier.load_weights("%s/Classifier_epoch_%d.weights.h5" % (model.checkpoint_dir, args.epoch))
 
     log.info("Data loading.....")
     DataGen = ClassifierDataLoader(config, args, type="test", is_debug_mode=args.is_debug)

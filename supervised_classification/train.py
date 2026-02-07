@@ -45,7 +45,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # ======================================================================================================================
 
 def train():
-    config = yaml_utils.Config(yaml.load(open(args.config_path)))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
 
     args.checkpoint_dir = "%s_supervised_classifier_n_%d" % (args.image_type, args.n_classes)
     args.dir = "supervised_classifier_lr%s" % args.lr
@@ -82,7 +82,7 @@ def train():
 
         # ------------------------------------------------------------------------
         if epoch % save_each == 0 or epoch == args.epochs:
-            Classifier.save_weights("%s/Classifier_epoch_%d" % (model.checkpoint_dir, epoch))
+            Classifier.save_weights("%s/Classifier_epoch_%d.weights.h5" % (model.checkpoint_dir, epoch))
 
 # ======================================================================================================================
 if __name__ == "__main__":

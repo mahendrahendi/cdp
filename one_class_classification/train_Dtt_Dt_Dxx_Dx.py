@@ -44,7 +44,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # ======================================================================================================================
 def train(args):
 
-    config = yaml_utils.Config(yaml.load(open(args.config_path)))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
     args.checkpoint_dir = "%s_%s_w%s" % (args.image_type, args.type, args.w)
     args.dir = "%s" % args.type
 
@@ -75,7 +75,7 @@ def train(args):
 
     # === Training =================================================================================================
     if args.start_epoch > 0:
-        EstimationModel.load_weights("%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, args.start_epoch))
+        EstimationModel.load_weights("%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, args.start_epoch))
 
     for epoch in range(args.start_epoch+1, args.epochs + 1):
         Loss_x = []
@@ -127,7 +127,7 @@ def train(args):
 
         # ------------------------------------------------------------------------
         if epoch % save_each == 0 or epoch == args.epochs:
-            EstimationModel.save_weights("%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, epoch))
+            EstimationModel.save_weights("%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, epoch))
 
 # ======================================================================================================================
 if __name__ == "__main__":

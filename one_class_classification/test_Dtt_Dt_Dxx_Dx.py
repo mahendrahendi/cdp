@@ -99,7 +99,7 @@ def applyMetric(template_code, printed_code, metric, thr=0.5):
 # ======================================================================================================================
 def run(args)
 
-    config = yaml_utils.Config(yaml.load(open(args.config_path)))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
     symbol_size = config.dataset["args"]["symbol_size"]
 
     args.checkpoint_dir = "%s_%s_w%s" % (args.image_type, args.type, args.w)
@@ -120,7 +120,7 @@ def run(args)
     Dists   = []
     Labels  = []
 
-    EstimationModel.load_weights("%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, args.epoch))
+    EstimationModel.load_weights("%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, args.epoch))
 
     for ind, path in enumerate(args.printed_paths):
         Dist = []

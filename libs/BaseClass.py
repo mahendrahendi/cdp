@@ -23,7 +23,7 @@ class BaseClass():
         return image
 
     def reshapeData(self, data, shape):
-        return data.reshape((-1, (*shape)))
+        return data.reshape((-1, *shape))
 
     def printToLog(self, info, pref=""):
         for k, v in info.items():

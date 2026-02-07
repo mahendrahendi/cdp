@@ -34,6 +34,11 @@ args = parser.parse_args()
 
 # ======================================================================================================================
 
+def _to_array(x):
+    while isinstance(x, (list, tuple)) and len(x) == 1:
+        x = x[0]
+    return np.asarray(x)
+
 def load_model_and_ocsvm(config, args):
     """Load trained model and OC-SVM"""
 
@@ -44,8 +49,8 @@ def load_model_and_ocsvm(config, args):
     Estimator = TemplateEstimatior(config, args, type=args.type)
     EstimationModel = Estimator.EstimationModel
 
-    checkpoint_path = "%s/EstimationModel_epoch_%d" % (Estimator.checkpoint_dir, args.epoch)
-    if not os.path.exists(checkpoint_path + ".index"):
+    checkpoint_path = "%s/EstimationModel_epoch_%d.weights.h5" % (Estimator.checkpoint_dir, args.epoch)
+    if not os.path.exists(checkpoint_path):
         print(f"ERROR: Model checkpoint not found at {checkpoint_path}")
         print("Please train the model first: python train_Dtt_Dxx.py --epochs 10")
         sys.exit(1)
@@ -129,8 +134,8 @@ def extract_features_from_image(image_path, template_path, EstimationModel, conf
 
     # Predict
     prediction = EstimationModel.predict(x_batch)
-    t_predict_batch = prediction[0]
-    x_predict_batch = prediction[1]
+    t_predict_batch = _to_array(prediction[0])
+    x_predict_batch = _to_array(prediction[1])
 
     # Calculate crop size
     crop_size_t = (template_size // symbol_size) * symbol_size
@@ -172,7 +177,7 @@ def main():
     print("="*70 + "\n")
 
     # Load config
-    config = yaml_utils.Config(yaml.load(open(args.config_path), Loader=yaml.FullLoader))
+    config = yaml_utils.Config(yaml.safe_load(open(args.config_path)))
 
     # Load model and OC-SVM
     EstimationModel, clf, config = load_model_and_ocsvm(config, args)

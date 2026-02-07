@@ -1,7 +1,7 @@
-checkpoint_dir: checkpoints
+checkpoint_dir: checkpoints2
 results_dir: results
 
-batchsize: 2
+batchsize: 4
 
 models:
   unet:
@@ -35,7 +35,7 @@ dataset:
   args:
     symbol_size: 5
     templates_path: ../data/binary/
-    printed_path: ../data/original/rgb/
+    printed_path: ../data/original/crop/
     bad_indices: []
     template_target_size: [320, 320]
     target_size: [320, 320, 3]
