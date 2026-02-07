@@ -110,16 +110,19 @@ class TemplateEstimatior(BaseClass):
         optimizer_discr = self.__getOptimizer(self.config.models["ClassicalDiscriminator"]["optimizer"], self.config.models["ClassicalDiscriminator"]["lr"])
         loss_dx = self.__getLoss(self.config.models["ClassicalDiscriminator"]["loss"])
 
+        self.Dx.trainable = True
         self.DxModel = Model(inputs=input_x, outputs=self.Dx(input_x), name="discriminator")
         self.DxModel.compile(loss=loss_dx, optimizer=optimizer_discr)
-        self.Dx.trainable = False
 
         # --- DtModel -------
         optimizer_discr = self.__getOptimizer(self.config.models["ClassicalDiscriminator"]["optimizer"], self.config.models["ClassicalDiscriminator"]["lr"])
         loss_dt = self.__getLoss(self.config.models["ClassicalDiscriminator"]["loss"])
 
+        self.Dt.trainable = True
         self.DtModel = Model(inputs=input_t, outputs=self.Dt(input_t), name="discriminator")
         self.DtModel.compile(loss=loss_dx, optimizer=optimizer_discr)
+        # Freeze discriminators for estimator training
+        self.Dx.trainable = False
         self.Dt.trainable = False
 
         # --- Nested estimator -------

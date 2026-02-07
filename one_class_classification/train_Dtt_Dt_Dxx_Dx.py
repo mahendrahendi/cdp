@@ -87,8 +87,17 @@ def train(args):
         for x_batch, y_batch in DataGenTrain.datagen:
             y_batch = y_batch.reshape((-1, config["dataset"]["args"]["target_size"][0],
                                        config["dataset"]["args"]["target_size"][1], 1))
+            prediction = EstimationModel.predict(x_batch, verbose=0)
+            pred_t = np.asarray(prediction[0])
+            if pred_t.dtype == object:
+                pred_t = np.stack(prediction[0], axis=0)
+            pred_x = np.asarray(prediction[1])
+            if pred_x.dtype == object:
+                pred_x = np.stack(prediction[1], axis=0)
+            pred_t = pred_t.reshape(y_batch.shape)
+            pred_x = pred_x.reshape(x_batch.shape)
             # --- Dt -----
-            x = np.concatenate((y_batch, EstimationModel.predict(x_batch)[0]))
+            x = np.concatenate((y_batch, pred_t))
             # real images label is 1.0
             y = np.ones([2 * y_batch.shape[0], 1])
             # fake images label is 0.0
@@ -97,7 +106,7 @@ def train(args):
             Loss_dt.append(loss)
 
             # --- Dx -----
-            x = np.concatenate((x_batch, EstimationModel.predict(x_batch)[1]))
+            x = np.concatenate((x_batch, pred_x))
             # real images label is 1.0
             y = np.ones([2 * y_batch.shape[0], 1])
             # fake images label is 0.0
