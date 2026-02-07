@@ -1,0 +1,147 @@
+C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe test_Dtt_Dxx.py --epoch 10 --subset test
+
+
+C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe test_Dtt_Dxx.py --epoch 10 --subset train --data_paths "../data/original/rgb/"
+
+C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe verify.py ..\data\original\rgb\0000.png
+
+
+
+  New Usage:
+
+  Option 1: Just filename (uses default data path)
+
+  python verify_simple.py 0000.png
+  python verify_simple.py 0001.png
+  python verify_simple.py 0002.png
+
+  Option 2: Full path
+
+  python verify_simple.py ..\data\original\rgb\0000.png
+  python verify_simple.py ..\data\original\rgb\0001.png
+
+  Option 3: With custom data path
+
+  python verify_simple.py 0000.png --data_path ../data/original/rgb/
+
+  ---
+  How it works:
+
+  - Extracts index from filename (e.g., 0000.png → index 0)
+  - Uses DataSetLoader with that index
+  - Same preprocessing as test script ✓
+  - Correct features and classification ✓
+
+  ---
+  Test it now:
+
+  python verify_simple.py ..\data\original\rgb\0000.png
+
+  Expected result:
+  - Features: dist_t≈1911, dist_x≈0.0024
+  - ✓ STATUS: AUTHENTIC
+
+  Try it!
+
+
+
+
+    Workflow:
+
+  # 1. Train model
+  python train_single_template.py --epochs 50
+
+  # 2. Extract BOTH train and test features
+  python test_Dtt_Dxx.py --epoch 50 --subset train --data_paths "../data/original/rgb/"
+  python test_Dtt_Dxx.py --epoch 50 --subset test --data_paths "../data/original/rgb/"
+
+  # 3. Run OC-SVM batch testing
+  python oc-svm_Dtt_Dxx.py
+
+
+  workflow2:
+  
+  Complete Workflow (Correct Order)
+
+  # Step 1: Train the neural network model
+  python ./one_class_classification/train_Dtt_Dxx.py --epochs 50
+
+  # Step 2: Extract features from TRAINING set (YOU WERE MISSING THIS!)
+  python ./one_class_classification/test_Dtt_Dxx.py --epoch 50 --subset train --data_paths "../data/original/rgb/"
+
+  # Step 3: Extract features from TEST set
+  python ./one_class_classification/test_Dtt_Dxx.py --epoch 50 --subset test --data_paths "../data/original/rgb/"
+
+  # Step 4: Train OC-SVM on training features, test on test features
+  python ./one_class_classification/oc-svm_Dtt_Dxx.py
+
+  Why You Need BOTH Train and Test Feature Extraction
+
+  Step 2 (train subset): Extracts features from training photos → saves to results/Dtt_Dxx/train_rgb_Dtt_Dxx.txt
+  - OC-SVM learns from these features
+  - Defines what "authentic" looks like
+
+  Step 3 (test subset): Extracts features from test photos → saves to results/Dtt_Dxx/test_rgb_Dtt_Dxx.txt
+  - OC-SVM tests on these features
+  - Checks if model generalizes to unseen data
+
+  Step 4: OC-SVM reads both files:
+  - Trains on train_rgb_Dtt_Dxx.txt
+  - Tests on test_rgb_Dtt_Dxx.txt
+  - Reports accuracy
+
+  Note About Epoch Numbers
+
+  You wrote --epoch 100 in step 2, but you trained for --epochs 50. They should match! Use --epoch 50 (the epoch number where you
+  want to load the trained model weights).
+
+  Your workflow confusion was completely justified - you needed that missing step!
+
+
+
+  1.C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe train_Dtt_Dxx.py --epochs 10
+  2.C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe test_Dtt_Dxx.py --epoch 50 --subset train --data_paths "../data/original/rgb/"
+  3.C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe test_Dtt_Dxx.py test_Dtt_Dxx.py --epoch 50 --subset test --data_paths "../data/original/rgb/"
+  4.C:\Users\mahen\AppData\Local\Programs\Python\Python37\python.exe oc-svm_Dtt_Dxx.py
+  5.
+
+
+tmux new -s tftrain
+LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:/usr/local/cuda-11.0/targets/x86_64-linux/lib:$LD_LIBRARY_PATH \
+python train_Dtt_Dxx.py --epochs 100
+
+Ctrl + B, release then D
+
+tmux attach -t tftrain
+
+
+
+  Prerequisites
+
+  1. Have model checkpoint, e.g. checkpoints2/rgb_Dtt_Dxx/EstimationModel_epoch_100.weights.h5.
+  2. Have OC-SVM train features file: results/Dtt_Dxx/train_rgb_Dtt_Dxx.txt.
+
+  If train features are missing, generate them:
+
+  python test_Dtt_Dxx.py --epoch 100 --subset train --data_paths "../data/original/rgb/"
+
+  Verify a manual arbitrary image
+
+  - Provide image path + template index:
+
+  python verify_any.py /full/path/to/your_phone_image.jpg 0 --epoch 100
+
+  0 means compare against ../data/binary/0000.png.
+
+  Verify an image already named like dataset (0000.png, 0042.png, etc.)
+
+  python verify_simple.py /full/path/to/0000.png --epoch 100
+
+  Output meaning
+
+  - STATUS: AUTHENTIC -> predicted original
+  - STATUS: FAKE -> predicted counterfeit
+  - Exit code 0 authentic, 1 fake
+
+  I also patched verify.py, verify_any.py, and verify_simple.py for Keras 3 compatibility (nested predict() outputs + .weights.h5
+  checkpoint checks).
